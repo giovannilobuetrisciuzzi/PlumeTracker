@@ -36,5 +36,7 @@ STANDALONE DEPLOYMENT via MATLAB Runtime:
 For users without an active MATLAB license, the software can be run completely free of charge using the standalone installer ("PlumeTracker_installer"). MATLAB Runtime is a standalone execution engine (a set of shared libraries and royalty-free components provided by MathWorks) that allows compiled MATLAB applications to run on systems without a licensed MATLAB installation. When running the installer, a guided wizard automatically downloads and configures the required MATLAB Runtime environment, bundling all compiled dependencies, toolboxes, and neural network components into a standalone executable (.exe) for direct deployment.
 
 Author: Lo Bue Trisciuzzi Giovanni
+
 Affiliation: University of Palermo
+
 Update: September 2026
