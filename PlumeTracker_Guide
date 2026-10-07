@@ -1,0 +1,69 @@
+=================================================================================
+                            PLUMETRACKER USER GUIDE
+=================================================================================
+
+SYSTEM REQUIREMENTS & PREREQUISITES
+-----------------------------------
+To execute the source code directly within the MATLAB environment, the following 
+official MathWorks toolboxes must be installed:
+- Computer Vision Toolbox: Required for core optical flow algorithms, including 
+  opticalFlowFarneback, image filtering, and ROI processing.
+- Deep Learning Toolbox: Required alongside Computer Vision Toolbox to execute 
+  the deep-learning-based opticalFlowRAFT engine and load pre-trained network layers.
+- Image Processing Toolbox: Required for morphological cleaning operations 
+  (e.g., bwareaopen, adapthisteq) and spatial image transforms.
+- Parallel Computing Toolbox (Optional): Required to enable CUDA GPU hardware 
+  acceleration for the RAFT engine. If absent, RAFT automatically defaults to CPU execution.
+
+
+STANDALONE DEPLOYMENT VIA MATLAB RUNTIME
+----------------------------------------
+For users without an active MATLAB license, PlumeTracker can be executed completely 
+free of charge using the standalone executable package ("PlumeTracker_installer").
+
+How MATLAB Runtime Works:
+MATLAB Runtime is a standalone execution engine (a suite of shared libraries and 
+royalty-free components provided by MathWorks) that enables compiled MATLAB 
+applications to run natively on computers without requiring a MATLAB installation or license.
+
+Installation & Deployment Process:
+1. Run "PlumeTracker_installer.exe".
+2. The guided setup wizard will automatically detect, download, and configure the 
+   exact version of MATLAB Runtime required for your operating system.
+3. Once installation completes, all necessary toolboxes, neural network components, 
+   and algorithmic libraries are bundled into the standalone executable (PlumeTracker.exe), allowing 
+   you to launch PlumeTracker directly as a native desktop application.
+
+
+PRACTICE GUIDE: HOW TO RUN AN ANALYSIS
+--------------------------------------
+1. Launch PlumeTracker.exe.
+2. Configure Processing Parameters (GUI Step 1):
+   - Select Motion Engine: Farneback (for lightweight CPU processing) or
+     RAFT (for complex turbulence/high precision on GPU).
+   - Set Frame Step, Scale Factor, and Filter Thresholds (angular deviation, 
+     minimum cluster size, and ROI coverage density). See suggested values within the GUI.
+   - Click "START ANALYSIS" and select your target video file (.mp4, .mov, .avi).
+
+3. Perform Spatial Calibration & Set FPS (GUI Step 2):
+   - Verify/adjust the video Frame Rate (FPS).
+   - Choose Calibration Option A (Field References): Draw 1 line of known real 
+     length at emission distance, or 2 lines at different depths to auto-interpolate 
+     perspective tilt across image rows. Use the video scrubber/play controls to find a clear frame.
+   - Or choose Calibration Option B (Camera Optics): Input target distance (d), 
+     lens horizontal FOV (°), and video horizontal resolution (W_px) to compute 
+     scaling analytically.
+
+4. Select Region of Interest (GUI Step 3):
+   - Use the video scrubber/play controls to find a clear frame.
+   - Draw a polygon encompassing the plume stream (close the loop by clicking 
+     the starting point).
+
+5. Real-Time Tracking & Automated Export:
+   - Observe the live 3-panel display showing the video feed, zoomed velocity 
+     colormap overlaid with orthogonal cross-section bounds and vector field 
+     arrows, and the mean velocity time-series profile.
+   - Upon completion or manual interruption of the analysis, the full results (Frame, Time_s, Velocity_ms, StdDev_ms, 
+     vel_max, Vx_ms, Vy_ms, Orthogonal_Section_m) are automatically exported 
+     to a structured CSV file in the source video directory.
+=================================================================================
