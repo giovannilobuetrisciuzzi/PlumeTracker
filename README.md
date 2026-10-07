@@ -43,4 +43,6 @@ Author: Lo Bue Trisciuzzi Giovanni
 
 Affiliation: University of Palermo
 
+Contacts: giovanni.lobuetrisciuzzi@unipa.it, giovannilobuetrisciuzzi@gmail.com
+
 Update: September 2026
