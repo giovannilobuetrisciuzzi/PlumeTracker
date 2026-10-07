@@ -37,7 +37,7 @@ For users without an active MATLAB license, the software can be run completely f
 
 REFERENCE:
 Please, kindly ensure the source is properly cited:
-Lo Bue Trisciuzzi, G. (2026). PlumeTracker: Optical flow velocity analysis for volcanic & gas emissions (Version 1.1.0) [Software]. University of Palermo. GitHub repository: https://github.com/giovannilobuetrisciuzzi/PlumeTracker
+Lo Bue Trisciuzzi, G. (2026). PlumeTracker: Optical Flow application to track and measure gas velocities from video using Farneback or RAFT algorithms. (Version 1.1.0) [Software]. University of Palermo. GitHub repository: https://github.com/giovannilobuetrisciuzzi/PlumeTracker
 
 Author: Lo Bue Trisciuzzi Giovanni
 
