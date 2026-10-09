@@ -1,7 +1,11 @@
-PlumeTracker is a MATLAB-based application designed to estimate, track, and analyze the velocity dynamics of volcanic fumaroles, gas plumes, and diffuse emissions from video files. Developed at the University of Palermo, the software couples optical flow tracking engines with a multi-stage spatial-temporal filtering pipeline to isolate fluid motion from ambient environmental noise.
+PlumeTracker is a MATLAB-based software designed to track and analyze the velocity dynamics of volcanic fumaroles, gas plumes, and diffuse emissions from video files. Developed at the University of Palermo by Giovanni Lo Bue Trisciuzzi within the Volcanology Laboratory (LabVulc), the software couples optical flow tracking engines with a multi-stage spatial-temporal filtering pipeline to isolate fluid motion from ambient environmental noise.
 
 See the 'SYSTEM REQUIREMENTS' and 'STANDALONE DEPLOYMENT via MATLAB Runtime' sections below, or refer to the external PlumeTracker_Guide file for a practical walkthrough on running the application.
 
+PlumeTracker is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details <http://www.gnu.org/licenses/>.
+
+
+WORKFLOW:
 Processing starts with an interactive GUI where the user configures parameters, selects the primary estimation engine, and calibrates spatial metrics. The system integrates two distinct motion tracking algorithms:
 - RAFT (Recurrent All-Pairs Field Transforms): A deep-learning optical flow engine that constructs all-pair correlation volumes and iteratively refines motion fields using Gated Recurrent Units (GRUs): a type of recurrent neural network architecture designed to process sequential data and propagate context across iterations. Accelerated by CUDA GPUs (NVIDIA's parallel computing platform), it excels at tracking complex, non-linear fluid turbulence, low-contrast puff edges, and dynamic luminance gradients.
 - Farneback: A classical, dense optical flow method that approximates local image neighborhoods using two-dimensional quadratic polynomials. It operates efficiently on standard CPUs, making it ideal for lightweight processing without dedicated deep-learning hardware.
