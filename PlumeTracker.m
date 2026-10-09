@@ -1,7 +1,30 @@
-%% 
-% OPTICAL FLOW ALGORITHM TO ESTIMATE MOVEMENT VELOCITY FROM VIDEO (Optical Flow RAFT/Farneback)
-% Created by Lo Bue Trisciuzzi Giovanni (University of Palermo)
-% Update: 24 September 2026
+%% %%%%%%%%%%%%%%%%%%%%%%%%% PlumeTracker %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Name:       PlumeTracker
+% Purpose:    An Optical Flow application to track and measure gas velocities from video using Farneback or RAFT algorithms.
+% Author:     Giovanni Lo Bue Trisciuzzi
+% Created:    August 2026
+% Updates:    October 2026
+% Copyright:  Lo Bue Trisciuzzi Giovanni, University of Palermo, 2026
+% License:    GNU GPL3
+% 
+% PlumeTracker is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     PlumeTracker is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details <http://www.gnu.org/licenses/>.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with PlumeTracker.  If not, see <http://www.gnu.org/licenses/>.
+
+
+function PlumeTracker()
+% PlumeTracker is a MATLAB-based software designed to track and analyze the velocity dynamics of volcanic fumaroles,
+% gas plumes, and diffuse emissions from video files. Developed at the University of Palermo, the software couples optical flow tracking engines
+% with a multi-stage spatial-temporal filtering pipeline to isolate fluid motion from ambient environmental noise.
 
 % MAIN CALCULATIONS AND FILTERING LOGIC:
 % 1. OPTICAL FLOW CALCULATION (RAFT):
@@ -30,16 +53,12 @@
 %    Computes ratio between active validated pixel area and total ROI area. 
 %    The frame's mean velocity is calculated only if gas covers at least X% of the ROI (minAreaRatio). 
 %    Otherwise, the data point is set to NaN to eliminate noise from lighting changes when no gas is present.
-% =========================================================================
-%
-% SUGGESTED FEATURES:
-% Inserire frame di inizio e fine da analizzare.
-% Inserire possibilità di ripetere linee e poligoni
-%
-function PlumeTracker()
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     clc; clear; close all; warning off
     %% 1. INTERACTIVE PARAMETER CONFIGURATION GUI
     % Default values for the GUI setup
+    def_app_version      = 'v. 1.1.1'; % Version string variable
     def_useRAFT          = 0;     % 1 = RAFT, 0 = Farneback
     def_frameStep        = 1;     % Frame skipping
     def_scaleFactor      = 1.0;   % Image scale factor
@@ -196,6 +215,18 @@ function PlumeTracker()
         'FontWeight', 'bold', 'FontSize', 11, 'BackgroundColor', [0.2 0.65 0.3], 'ForegroundColor', 'w', ...
         'Callback', @(src, evt) uiresume(figParam));
     
+    % VERSION DISPLAY LABEL & SMALL ABOUT BUTTON (BOTTOM RIGHT)
+    uicontrol('Parent', figParam, 'Style', 'text', 'Units', 'normalized', ...
+        'Position', [0.82, 0.012, 0.12, 0.035], 'String', def_app_version, ...
+        'HorizontalAlignment', 'right', 'FontWeight', 'bold', 'FontSize', 9, ...
+        'ForegroundColor', [0.4 0.4 0.4]);
+        
+    btnAbout = uicontrol('Parent', figParam, 'Style', 'pushbutton', 'Units', 'normalized', ...
+        'Position', [0.95, 0.023, 0.027, 0.035], 'String', '?', 'FontWeight', 'bold', ...
+        'FontSize', 8, 'HorizontalAlignment', 'center', ...
+        'BackgroundColor', [0.2 0.5 0.8], 'ForegroundColor', 'w', ...
+        'Callback', @showAboutDialog);
+    
     % --- CICLO CONTINUO PER COMPILAZIONE ESEGUIBILE (Evita la chiusura del .exe) ---
     while ishandle(figParam)
         set(figParam, 'Visible', 'on');
@@ -236,6 +267,13 @@ function PlumeTracker()
             fpsRilevato = 24;
         end
         disp(['FPS detected: ', num2str(fpsRilevato)]);
+        
+        if isprop(vReader, 'NumFrames') && vReader.NumFrames > 0
+            totalVideoFrames = vReader.NumFrames;
+        else
+            totalVideoFrames = floor(vReader.Duration * vReader.FrameRate);
+        end
+        if totalVideoFrames < 1, totalVideoFrames = 1; end
         
         %% 3. INTERACTIVE GUI: Scale Calibration & FPS Control (Screen-Independent Layout)
         distanza = 5; % meters
@@ -326,34 +364,73 @@ function PlumeTracker()
         if isempty(metriPerPixel) && isempty(calibLinesData), continue; end
         disp(['Calculated scale (meters/pixel): ', num2str(metriPerPixel)]);
         
-        %% 4. Polygonal ROI Selection
-        figRoi = figure('Name', 'Region of Interest (ROI) Selection', 'NumberTitle', 'off', 'toolbar', 'none', 'WindowState', 'maximized');
-        axRoi = axes('Parent', figRoi, 'Position', [0.05, 0.12, 0.90, 0.82]);
+        %% 4. Polygonal ROI Selection & Frame Range Definition
+        figRoi = figure('Name', 'Region of Interest (ROI) & Frame Range Selection', ...
+            'NumberTitle', 'off', 'toolbar', 'none', 'WindowState', 'maximized');
+        axRoi = axes('Parent', figRoi, 'Position', [0.05, 0.18, 0.90, 0.76]);
         
         btnToggleVideo = uicontrol('Parent', figRoi, 'Style', 'pushbutton', 'String', '▶️ Play Video', ...
-            'Position', [30, 20, 160, 40], 'FontWeight', 'bold', 'FontSize', 10, 'Callback', @toggleVideoROI);
+            'Position', [30, 70, 140, 35], 'FontWeight', 'bold', 'FontSize', 10, 'Callback', @toggleVideoROI);
         
         % BARRA DI SCORRIMENTO PER LA ROI
         sliderVideoRoi = uicontrol('Parent', figRoi, 'Style', 'slider', ...
-            'Position', [200, 25, 500, 30], 'Min', 0, 'Max', max(0.1, vReader.Duration), 'Value', vReader.CurrentTime, ...
+            'Position', [180, 75, 400, 25], 'Min', 0, 'Max', max(0.1, vReader.Duration), 'Value', vReader.CurrentTime, ...
             'Callback', @sliderScrubRoi);
         
-        currFrameRoi = imresize(frameIniziale, scaleFactor);
+        % CAMPI EDITABILI FRAME INIZIO E FINE CON CORREZIONE LIMITI RIGIDA
+        uicontrol('Parent', figRoi, 'Style', 'text', 'Position', [600, 85, 75, 20], ...
+            'String', 'Start Frame:', 'HorizontalAlignment', 'right', 'FontWeight', 'bold');
+        editStartFrame = uicontrol('Parent', figRoi, 'Style', 'edit', 'Position', [680, 85, 60, 25], ...
+            'String', '1', 'BackgroundColor', 'w', 'FontWeight', 'bold');
+            
+        uicontrol('Parent', figRoi, 'Style', 'text', 'Position', [750, 85, 70, 20], ...
+            'String', 'End Frame:', 'HorizontalAlignment', 'right', 'FontWeight', 'bold');
+        editEndFrame = uicontrol('Parent', figRoi, 'Style', 'edit', 'Position', [825, 85, 60, 25], ...
+            'String', num2str(totalVideoFrames), 'BackgroundColor', 'w', 'FontWeight', 'bold');
+        
+        % PULSANTE PER RIPETERE IL POLIGONO ROI
+        btnRedrawROI = uicontrol('Parent', figRoi, 'Style', 'pushbutton', ...
+            'Position', [30, 20, 180, 35], 'String', '🔄 Redraw ROI Polygon', ...
+            'FontWeight', 'bold', 'FontSize', 10, 'BackgroundColor', [0.8 0.4 0.1], 'ForegroundColor', 'w', ...
+            'Callback', @redrawRoiCallback);
+            
+        % PULSANTE PER CONFERMARE FRAME E PROSEGUIRE
+        btnConfirmRoi = uicontrol('Parent', figRoi, 'Style', 'pushbutton', ...
+            'Position', [220, 20, 260, 35], 'String', '✅ Confirm Frames & ROI', ...
+            'FontWeight', 'bold', 'FontSize', 10, 'BackgroundColor', [0.2 0.65 0.3], 'ForegroundColor', 'w', ...
+            'Callback', @confirmRoiCallback);
+            
+        vReader.CurrentTime = 0;
+        currFrameRoi = imresize(readFrame(vReader), scaleFactor);
         hImgRoi = imshow(currFrameRoi, 'Parent', axRoi);
-        title(axRoi, {'DRAW A POLYGON AROUND THE REGION OF INTEREST:', ...
-               'Click polygon vertices: the last point must match the first point'});
         
         isPlayingRoi = false;
         timerRoi = timer('ExecutionMode', 'fixedRate', 'Period', 1/fps, 'TimerFcn', @updateVideoFrameROI);
         
-        roiHandle = drawpolygon('Parent', axRoi);
+        roiHandle = [];
+        roiConfirmed = false;
+        isDrawingRoi = false; % Flag anti-blocco per clic ripetuti
+        
+        % CICLO ROBUSTO PER RIDISEGNO MULTIPLO DELLA ROI
+        while ~roiConfirmed && ishandle(figRoi)
+            drawNewRoiPolygon();
+            
+            if ishandle(figRoi) && ~roiConfirmed
+                uiwait(figRoi); % Attende in modo sicuro fino al termine del disegno o al click sui pulsanti
+            end
+        end
+        
         if ishandle(timerRoi)
             stop(timerRoi); delete(timerRoi);
         end
         
-        if ~isvalid(roiHandle) || isempty(roiHandle.Position)
+        if ~roiConfirmed || ~isvalid(roiHandle) || isempty(roiHandle.Position)
             if ishandle(figRoi), close(figRoi); end; continue;
         end
+        
+        % Calcola parametri definitivi dei frame scelti con vincolo rigido
+        endFrameNum   = min(totalVideoFrames, max(1, round(str2double(editEndFrame.String))));
+        startFrameNum = max(1, min(endFrameNum - 1, round(str2double(editStartFrame.String))));
         
         roiPosition = roiHandle.Position;
         maskRoiCrop = createMask(roiHandle);
@@ -374,7 +451,10 @@ function PlumeTracker()
         
         maskRoiPolygon = imcrop(maskRoiCrop, cropPos);
         totalRoiArea   = sum(maskRoiPolygon(:)); % Total ROI pixel area
-        vReader.CurrentTime = 0;
+        
+        % Posiziona il vReader al frame iniziale scelto
+        startTimeSec = max(0, (startFrameNum - 1) / fps);
+        vReader.CurrentTime = min(startTimeSec, vReader.Duration - 0.05);
         
         % --- CONSTRUCT PIXEL-TO-METER SCALE MATRIX FOR ROI ---
         if ~isempty(calibLinesData) && length(calibLinesData) == 2
@@ -413,14 +493,14 @@ function PlumeTracker()
                 'FilterSize', filterSize);
         end
         
-        % --- MODIFICA LAYOUT VISUALIZZAZIONE: 2x2 PER AVERE LA MAPPA PIÙ GRANDE E ZOOMATA ---
+        % --- LAYOUT VISUALIZZAZIONE 2x2 ---
         fig = figure('Name', ternary(useRAFT, 'Flow Analysis (RAFT)', 'Flow Analysis (Farneback)'), 'WindowState', 'maximized');
         hAx1 = subplot(2, 2, 1); % Video principale con area ROI
         hAx2 = subplot(2, 2, 2); % Mappa vettoriale / campo di velocità ingrandita e zoomata sulla ROI
         hAx3 = subplot(2, 1, 2); % Grafico profilogramma di velocità
         
         title(hAx3, 'Gas velocity profile - Average: 0.00 ± 0.00 m/s');
-        xlabel(hAx3, 'Time (seconds)'); ylabel(hAx3, 'Mean gas velocity (m/s)');
+        xlabel(hAx3, 'Absolute Video Time (seconds)'); ylabel(hAx3, 'Mean gas velocity (m/s)');
         grid(hAx3, 'on'); hold(hAx3, 'on');
         hLine = plot(hAx3, NaN, NaN,'Linestyle','-','marker','o', 'LineWidth', 2, 'Color', [0.85 0.325 0.098]);
         
@@ -447,8 +527,8 @@ function PlumeTracker()
             end 
         end
         
-        %% 6. Processing Loop (with Frame Skipping support)
-        frameCount = 1;
+        %% 6. Processing Loop (with Frame Skipping support & End Frame Stop)
+        frameCount = startFrameNum;
         minCos = cosd(maxAngleDev); 
         speedHistory   = [];
         stdHistory     = [];
@@ -465,9 +545,9 @@ function PlumeTracker()
         coherentStreak = [];
         dt = frameStep / fps;
         
-        while hasFrame(vReader) && ishandle(fig)
+        while hasFrame(vReader) && ishandle(fig) && (frameCount <= endFrameNum)
             for s = 1:frameStep
-                if hasFrame(vReader)
+                if hasFrame(vReader) && (frameCount < endFrameNum)
                     frameCurr = readFrame(vReader);
                     frameCount = frameCount + 1;
                 end
@@ -610,10 +690,12 @@ function PlumeTracker()
             vxHistory(idxData)       = currVx;
             vyHistory(idxData)       = currVy;
             sezioneHistory(idxData)  = currSezione_m;
+            
+            % TEMPO ASSOLUTO DEL VIDEO (calcolato a partire dal frame 1 del video originale)
             timeAxis(idxData)        = (frameCount - 1) / fps;
             
             % Visualization
-            if mod(idxData, drawEveryN) == 0 || ~hasFrame(vReader)
+            if mod(idxData, drawEveryN) == 0 || ~hasFrame(vReader) || (frameCount >= endFrameNum)
                 % --- SUBPLOT 1: VIDEO GENERALE ---
                 frameDisplay = insertShape(frameCurrSmall, 'FilledPolygon', roiPoints, ...
                     'Color', 'green', 'Opacity', 0.15);
@@ -629,7 +711,6 @@ function PlumeTracker()
                 cropROI_Speed(~cleanValidMask) = NaN; 
                 fullSpeedMap(cropY:(cropY+hCrop-1), cropX:(cropX+wCrop-1)) = cropROI_Speed;
                 
-                % Preparazione dello sfondo in scala di grigi (RGB 3 canali) per evitare conflitti con la colormap
                 if size(frameCurrSmall, 3) == 1
                     bgFrame = cat(3, frameCurrSmall, frameCurrSmall, frameCurrSmall);
                 else
@@ -641,7 +722,6 @@ function PlumeTracker()
                 imshow(bgFrame, 'Parent', hAx2);
                 hold(hAx2, 'on');
                 
-                % Sovrapposizione colormap con trasparenza alpha (0.6 per mostrare il frame sottostante)
                 imagesc(fullSpeedMap, 'Parent', hAx2, 'AlphaData', ~isnan(fullSpeedMap) * 0.6);
                 
                 colormap(hAx2, 'jet');
@@ -681,14 +761,14 @@ function PlumeTracker()
                         vy_sub = Vy_out(plotMask);
                         mag_sub = hypot(vx_sub, vy_sub);
                         
-                        base_len = 20; scale_factor_arrow = 5; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% frecce
+                        base_len = 20; scale_factor_arrow = 5;
                         vis_len = base_len + mag_sub * scale_factor_arrow;
                         
                         dx = (vx_sub ./ mag_sub) .* vis_len;
                         dy = (vy_sub ./ mag_sub) .* vis_len;
                         
                         arrowColor = [1.00 1.00 1.00]; alphaVal = 0.70;           
-                        headW = 6; headL = 10; stemW = 1.5; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% frecce 
+                        headW = 6; headL = 10; stemW = 1.5; 
                         
                         for k = 1:length(x_pts)
                             x0 = x_pts(k); y0 = y_pts(k);
@@ -749,9 +829,13 @@ function PlumeTracker()
                         frameCount, currSpeed, currStd, currMaxSpeed, currSezione_m));
                 end
                 
-                % --- SUBPLOT 3: GRAFICO TEMPORALE ---
+                % --- SUBPLOT 3: GRAFICO TEMPORALE DINAMICO ED EVOLUTIVO ---
                 set(hLine, 'XData', timeAxis, 'YData', speedHistory);
-                xlim(hAx3, [0, max(timeAxis(end), 1)]);
+                
+                % L'asse X cresce dinamicamente dal tempo iniziale al tempo dell'ultimo punto calcolato
+                startTimeSec = (startFrameNum - 1) / fps;
+                currTimeSec  = timeAxis(end);
+                xlim(hAx3, [startTimeSec, max(currTimeSec + 1, startTimeSec + 1)]);
                 
                 currentAvg = mean(speedHistory, 'omitnan');
                 currentStd = std(speedHistory, 'omitnan');
@@ -766,6 +850,11 @@ function PlumeTracker()
         end
         reset(flowEstimator);
         
+        % --- MESSAGGIO DI FINE ANALISI / VIDEO ---
+        disp('Video analysis completed successfully!');
+        msgbox(sprintf('Video analysis completed successfully!\nProcessed frames: %d to %d.', startFrameNum, min(frameCount, endFrameNum)), ...
+            'Analysis Finished', 'help');
+        
         %% 7. AUTOMATIC DATA SAVING (CSV WITH V, Std, vel_max, Vx, Vy, Orthogonal_Section_m)
         if save_output == 1 && ~isempty(timeAxis)
             [~, nameOnly, ~] = fileparts(fileName);
@@ -778,7 +867,7 @@ function PlumeTracker()
             Vx_ms          = vxHistory(:);      % Horizontal component (m/s)
             Vy_ms          = -vyHistory(:);     % Vertical component (m/s) - FORCED NEGATIVE FOR CONSISTENCY
             Orthogonal_Section_m = sezioneHistory(:); % Flow-orthogonal section width in meters
-            Frame          = (1:length(Time_s))';
+            Frame          = (startFrameNum:(startFrameNum + length(Time_s) - 1))';
             
             T_out = table(Frame, Time_s, Velocity_ms, StdDev_ms, vel_max, Vx_ms, Vy_ms, Orthogonal_Section_m);
             writetable(T_out, outputCsvName);
@@ -787,23 +876,102 @@ function PlumeTracker()
     end
     if ishandle(figParam), delete(figParam); end
     
-    %% CALLBACKS
+    %% CALLBACKS & HELPER FUNCTIONS
+    function showAboutDialog(~, ~)
+        aboutTitle = ['About PlumeTracker ' def_app_version];
+        aboutMsg = sprintf(['PlumeTracker is a MATLAB-based software designed to track and analyze the velocity dynamics of volcanic fumaroles, gas plumes, and diffuse emissions from video files. Developed at the University of Palermo by Giovanni Lo Bue Trisciuzzi within the Volcanology Laboratory (LabVulc), the software couples optical flow tracking engines with a multi-stage spatial-temporal filtering pipeline to isolate fluid motion from ambient environmental noise.\n\n' ...
+            'PlumeTracker is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details <http://www.gnu.org/licenses/>.\n\n' ...
+            'REFERENCE:\nPlease, kindly ensure the source is properly cited:\n\n' ...
+            'Lo Bue Trisciuzzi, G. (2026). PlumeTracker: Optical Flow application to track and measure gas velocities from video using Farneback or RAFT algorithms. (Version 1.1.0) [Software]. University of Palermo.\n' ...
+            'GitHub repository: https://github.com/giovannilobuetrisciuzzi/PlumeTracker\n\n' ...
+            'Author: Lo Bue Trisciuzzi Giovanni\n' ...
+            'Affiliation: University of Palermo\n' ...
+            'Contacts: giovanni.lobuetrisciuzzi@unipa.it, giovannilobuetrisciuzzi@gmail.com\n' ...
+            'Update: September 2026']);
+        
+        d = dialog('Name', aboutTitle, 'Units', 'normalized', ...
+            'Position', [0.30, 0.35, 0.40, 0.35], 'WindowStyle', 'normal');
+        
+        uicontrol('Parent', d, 'Style', 'edit', 'Units', 'normalized', ...
+            'Position', [0.05, 0.20, 0.90, 0.75], ...
+            'String', aboutMsg, 'Max', 2, 'Min', 0, ...
+            'HorizontalAlignment', 'left', 'FontName', 'Helvetica', ...
+            'FontSize', 9, 'BackgroundColor', get(d, 'Color'), ...
+            'Enable', 'inactive');
+        
+        uicontrol('Parent', d, 'Style', 'pushbutton', 'Units', 'normalized', ...
+            'Position', [0.40, 0.03, 0.20, 0.12], 'String', 'OK', ...
+            'FontWeight', 'bold', 'Callback', @(~,~) delete(d));
+     end
+
+    function drawNewRoiPolygon()
+        if isPlayingRoi
+            toggleVideoROI();
+        end
+        
+        if ~isempty(roiHandle) && isvalid(roiHandle)
+            delete(roiHandle);
+            roiHandle = [];
+        end
+        
+        title(axRoi, {'DRAW A POLYGON AROUND THE REGION OF INTEREST:', ...
+            'Click polygon vertices: double click or join last point to finish, then click "✅ Confirm Frames & ROI"'});
+            
+        isDrawingRoi = true;
+        try
+            roiHandle = drawpolygon('Parent', axRoi);
+        catch
+            roiHandle = [];
+        end
+        isDrawingRoi = false;
+    end
+
+    function redrawRoiCallback(~, ~)
+        if isDrawingRoi
+            return; % Ignora i clic multipli se l'utente sta già tracciando
+        end
+        if ishandle(figRoi)
+            uiresume(figRoi);
+        end
+    end
+
+    function confirmRoiCallback(~, ~)
+        if isDrawingRoi
+            return; % Ignora il pulsante se il disegno non è terminato
+        end
+        if ~isempty(roiHandle) && isvalid(roiHandle) && ~isempty(roiHandle.Position)
+            roiConfirmed = true;
+            if ishandle(figRoi)
+                uiresume(figRoi);
+            end
+        else
+            msgbox('Please draw a valid ROI polygon before confirming.', 'ROI Warning', 'warn');
+        end
+    end
+
     function toggleFarnebackGUI(~, ~)
         isFarneback = (popRAFT.Value == 2);
         enableState = ternary(isFarneback, 'on', 'off');
         set([txtPyr, editPyrLevels, txtNeigh, editNeighSize, txtFilt, editFiltSize, pnlFarnebackGroup], ...
             'Enable', enableState);
     end
+
     function updateVideoFrameROI(~, ~)
         if isPlayingRoi && hasFrame(vReader) && ishandle(hImgRoi)
             currFrameRoi = imresize(readFrame(vReader), scaleFactor);
             set(hImgRoi, 'CData', currFrameRoi);
             if ishandle(sliderVideoRoi), set(sliderVideoRoi, 'Value', vReader.CurrentTime); end
+            
+            currFrameIdx = min(round(vReader.CurrentTime * fps) + 1, totalVideoFrames);
+            if ishandle(editStartFrame)
+                set(editStartFrame, 'String', num2str(currFrameIdx));
+            end
         elseif isPlayingRoi && ~hasFrame(vReader)
             vReader.CurrentTime = 0;
             if ishandle(sliderVideoRoi), set(sliderVideoRoi, 'Value', 0); end
         end
     end
+
     function toggleVideoROI(~, ~)
         isPlayingRoi = ~isPlayingRoi;
         if isPlayingRoi
@@ -814,6 +982,7 @@ function PlumeTracker()
             stop(timerRoi);
         end
     end
+
     function sliderScrubRoi(~, ~)
         if ishandle(sliderVideoRoi)
             newTime = get(sliderVideoRoi, 'Value');
@@ -822,9 +991,15 @@ function PlumeTracker()
             if hasFrame(vReader) && ishandle(hImgRoi)
                 currFrameRoi = imresize(readFrame(vReader), scaleFactor);
                 set(hImgRoi, 'CData', currFrameRoi);
+                
+                currFrameIdx = min(round(newTime * fps) + 1, totalVideoFrames);
+                if ishandle(editStartFrame)
+                    set(editStartFrame, 'String', num2str(currFrameIdx));
+                end
             end
         end
     end
+
     function addManualMeasurement(~, ~)
         fpsUser = str2double(editFPS.String);
         if ~isnan(fpsUser) && fpsUser > 0, fps = fpsUser; end
@@ -833,102 +1008,179 @@ function PlumeTracker()
         
         figCalibFull = figure('Name', 'Scale Calibration - Frame & Line Selection', ...
             'NumberTitle', 'off', 'toolbar', 'none', 'WindowState', 'maximized');
-        axCalibFull = axes('Parent', figCalibFull, 'Position', [0.05, 0.12, 0.90, 0.82]);
+        axCalibFull = axes('Parent', figCalibFull, 'Position', [0.05, 0.18, 0.90, 0.76]);
         
         btnToggleVideoCalib = uicontrol('Parent', figCalibFull, 'Style', 'pushbutton', 'String', '▶️ Play Video', ...
-            'Position', [30, 20, 160, 40], 'FontWeight', 'bold', 'FontSize', 10, 'Callback', @toggleVideoCalib);
+            'Position', [30, 70, 140, 35], 'FontWeight', 'bold', 'FontSize', 10, 'Callback', @toggleVideoCalib);
         
-        % BARRA DI SCORRIMENTO PER LA CALIBRAZIONE
         sliderVideoCalib = uicontrol('Parent', figCalibFull, 'Style', 'slider', ...
-            'Position', [200, 25, 500, 30], 'Min', 0, 'Max', max(0.1, vReader.Duration), 'Value', vReader.CurrentTime, ...
+            'Position', [180, 75, 400, 25], 'Min', 0, 'Max', max(0.1, vReader.Duration), 'Value', vReader.CurrentTime, ...
             'Callback', @sliderScrubCalib);
+            
+        btnRedrawLines = uicontrol('Parent', figCalibFull, 'Style', 'pushbutton', ...
+            'Position', [600, 70, 160, 35], 'String', '🔄 Redraw Lines', ...
+            'FontWeight', 'bold', 'FontSize', 10, 'BackgroundColor', [0.8 0.4 0.1], 'ForegroundColor', 'w', ...
+            'Callback', @redrawLinesCallback);
+            
+        btnConfirmLines = uicontrol('Parent', figCalibFull, 'Style', 'pushbutton', ...
+            'Position', [770, 70, 180, 35], 'String', '✅ Confirm & Proceed', ...
+            'FontWeight', 'bold', 'FontSize', 10, 'BackgroundColor', [0.2 0.65 0.3], 'ForegroundColor', 'w', ...
+            'Callback', @confirmLinesCallback);
         
-        currFrameCalib = imresize(frameIniziale, scaleFactor);
+        vReader.CurrentTime = 0;
+        currFrameCalib = imresize(readFrame(vReader), scaleFactor);
         hImgCalib = imshow(currFrameCalib, 'Parent', axCalibFull);
         
         isPlayingCalib = false;
         vReader.CurrentTime = 0;
         timerCalib = timer('ExecutionMode', 'fixedRate', 'Period', 1/fps, 'TimerFcn', @updateVideoFrameCalib);
         
-        % --- LINE 1 (MANDATORY: NEAR FUMAROLA) ---
-        title(axCalibFull, {'LINE 1 (Mandatory - Near Fumarola):', ...
-            'Use Play/Pause video to choose frame, then click FIRST point'});
-        p1 = drawpoint('Parent', axCalibFull, 'Color', 'r', 'MarkerSize', 3); pos1 = p1.Position;
+        p1 = []; p2 = []; p3 = []; p4 = [];
+        hL1 = []; hL2 = [];
+        line1Struct = []; line2Struct = [];
+        linesConfirmed = false;
+        redrawRequested = false;
+        isDrawingLines = false; % Flag anti-blocco per le linee
         
-        title(axCalibFull, {'LINE 1 (Mandatory - Near Fumarola):', 'Click SECOND point'});
-        p2 = drawpoint('Parent', axCalibFull, 'Color', 'r', 'MarkerSize', 3); pos2 = p2.Position;
+        while ~linesConfirmed && ishandle(figCalibFull)
+            redrawRequested = false;
+            drawCalibrationLines();
+            
+            if redrawRequested
+                continue; 
+            end
+            
+            if ishandle(figCalibFull) && ~linesConfirmed
+                uiwait(figCalibFull); 
+            end
+        end
         
-        isPlayingCalib = false;
         if ishandle(timerCalib)
             stop(timerCalib); delete(timerCalib);
         end
         
-        hold(axCalibFull, 'on'); 
-        line(axCalibFull, [pos1(1), pos2(1)], [pos1(2), pos2(2)], 'Color', 'r', 'LineWidth', 2); 
-        hold(axCalibFull, 'off');
-        
-        distPx1 = norm(pos1 - pos2);
-        if distPx1 < 3
-            delete(p1); delete(p2); 
-            if ishandle(figCalibFull), delete(figCalibFull); end
-            if ishandle(figCalib), delete(figCalib); end
-            return; 
-        end
-        
-        answer1 = inputdlg(sprintf('Enter REAL length in METERS for LINE 1 (Pixels: %.1f):', distPx1), ...
-            'Line 1 Real Distance', [1 50], {'1.0'});
-        if isempty(answer1) || isnan(str2double(answer1{1}))
-            delete(p1); delete(p2); 
-            if ishandle(figCalibFull), delete(figCalibFull); end
-            if ishandle(figCalib), delete(figCalib); end
-            return; 
-        end
-        
-        scale1 = str2double(answer1{1}) / distPx1;
-        yAvg1  = mean([pos1(2), pos2(2)]);
-        line1Struct = struct('scale', scale1, 'yAvg', yAvg1);
-        
-        % --- SECOND LINE OPTION ---
-        choice = questdlg('Do you want to insert a SECOND line at a different distance to correct perspective?', ...
-            'Second Line', 'Yes', 'No, 1 line is enough', 'No, 1 line is enough');
-        
-        if strcmp(choice, 'Yes')
-            title(axCalibFull, {'LINE 2 (Second Distance):', 'Click FIRST point'});
-            p3 = drawpoint('Parent', axCalibFull, 'Color', 'cyan', 'MarkerSize', 3); pos3 = p3.Position;
-            
-            title(axCalibFull, {'LINE 2 (Second Distance):', 'Click SECOND point'});
-            p4 = drawpoint('Parent', axCalibFull, 'Color', 'cyan', 'MarkerSize', 3); pos4 = p4.Position;
-            
-            hold(axCalibFull, 'on'); 
-            line(axCalibFull, [pos3(1), pos4(1)], [pos3(2), pos4(2)], 'Color', 'cyan', 'LineWidth', 2); 
-            hold(axCalibFull, 'off');
-            
-            distPx2 = norm(pos3 - pos4);
-            if distPx2 >= 3
-                answer2 = inputdlg(sprintf('Enter REAL length in METERS for LINE 2 (Pixels: %.1f):', distPx2), ...
-                    'Line 2 Real Distance', [1 50], {'1.0'});
-                if ~isempty(answer2) && ~isnan(str2double(answer2{1}))
-                    scale2 = str2double(answer2{1}) / distPx2;
-                    yAvg2  = mean([pos3(2), pos4(2)]);
-                    line2Struct = struct('scale', scale2, 'yAvg', yAvg2);
-                    calibLinesData = [line1Struct, line2Struct];
-                    metriPerPixel = scale1;
-                else
-                    metriPerPixel = scale1;
-                    calibLinesData = [];
-                end
+        if linesConfirmed && ~isempty(line1Struct)
+            metriPerPixel = line1Struct.scale;
+            if ~isempty(line2Struct)
+                calibLinesData = [line1Struct, line2Struct];
             else
-                metriPerPixel = scale1;
                 calibLinesData = [];
             end
-        else
-            metriPerPixel = scale1;
-            calibLinesData = [];
         end
         
         if ishandle(figCalibFull), delete(figCalibFull); end
         if ishandle(figCalib), delete(figCalib); end
         
+        function drawCalibrationLines()
+            if isPlayingCalib, toggleVideoCalib(); end
+            
+            clearLineObjects();
+            isDrawingLines = true;
+            
+            try
+                % --- LINE 1 (MANDATORY: NEAR FUMAROLA) ---
+                title(axCalibFull, {'LINE 1 (Mandatory - Near Fumarola):', ...
+                    'Use Play/Pause video or slider to choose frame, then click FIRST point'});
+                p1 = drawpoint('Parent', axCalibFull, 'Color', 'r', 'MarkerSize', 3); pos1 = p1.Position;
+                
+                title(axCalibFull, {'LINE 1 (Mandatory - Near Fumarola):', 'Click SECOND point'});
+                p2 = drawpoint('Parent', axCalibFull, 'Color', 'r', 'MarkerSize', 3); pos2 = p2.Position;
+                
+                hold(axCalibFull, 'on'); 
+                hL1 = line(axCalibFull, [pos1(1), pos2(1)], [pos1(2), pos2(2)], 'Color', 'r', 'LineWidth', 2); 
+                hold(axCalibFull, 'off');
+                drawnow;
+                
+                distPx1 = norm(pos1 - pos2);
+                if distPx1 < 3
+                    msgbox('Line 1 is too short. Please click "🔄 Redraw Lines" to try again.', 'Line Error', 'warn');
+                    redrawRequested = true;
+                    isDrawingLines = false;
+                    return;
+                end
+                
+                answer1 = inputdlg(sprintf('Enter REAL length in METERS for LINE 1 (Pixels: %.1f):', distPx1), ...
+                    'Line 1 Real Distance', [1 50], {'1.0'});
+                if isempty(answer1) || isnan(str2double(answer1{1}))
+                    redrawRequested = true;
+                    isDrawingLines = false;
+                    return; 
+                end
+                
+                scale1 = str2double(answer1{1}) / distPx1;
+                yAvg1  = mean([pos1(2), pos2(2)]);
+                line1Struct = struct('distPx', distPx1, 'yAvg', yAvg1, 'scale', scale1);
+                
+                % --- SECOND LINE OPTION ---
+                choice = questdlg('Do you want to insert a SECOND line at a different distance to correct perspective?', ...
+                    'Second Line', 'Yes', 'No, 1 line is enough', 'No, 1 line is enough');
+                
+                if strcmp(choice, 'Yes')
+                    title(axCalibFull, {'LINE 2 (Second Distance):', 'Click FIRST point (Line 1 remains visible in red)'});
+                    p3 = drawpoint('Parent', axCalibFull, 'Color', 'cyan', 'MarkerSize', 3); pos3 = p3.Position;
+                    
+                    title(axCalibFull, {'LINE 2 (Second Distance):', 'Click SECOND point'});
+                    p4 = drawpoint('Parent', axCalibFull, 'Color', 'cyan', 'MarkerSize', 3); pos4 = p4.Position;
+                    
+                    hold(axCalibFull, 'on'); 
+                    hL2 = line(axCalibFull, [pos3(1), pos4(1)], [pos3(2), pos4(2)], 'Color', 'cyan', 'LineWidth', 2); 
+                    hold(axCalibFull, 'off');
+                    drawnow;
+                    
+                    distPx2 = norm(pos3 - pos4);
+                    if distPx2 >= 3
+                        answer2 = inputdlg(sprintf('Enter REAL length in METERS for LINE 2 (Pixels: %.1f):', distPx2), ...
+                            'Line 2 Real Distance', [1 50], {'1.0'});
+                        if ~isempty(answer2) && ~isnan(str2double(answer2{1}))
+                            scale2 = str2double(answer2{1}) / distPx2;
+                            yAvg2  = mean([pos3(2), pos4(2)]);
+                            line2Struct = struct('distPx', distPx2, 'yAvg', yAvg2, 'scale', scale2);
+                        end
+                    end
+                end
+            catch
+                redrawRequested = true;
+            end
+            
+            isDrawingLines = false;
+            title(axCalibFull, {'CALIBRATION LINES DRAWN', 'Click "✅ Confirm & Proceed" to finalize or "🔄 Redraw Lines" to draw again'});
+        end
+
+        function clearLineObjects()
+            if ~isempty(p1) && isvalid(p1), delete(p1); p1 = []; end
+            if ~isempty(p2) && isvalid(p2), delete(p2); p2 = []; end
+            if ~isempty(p3) && isvalid(p3), delete(p3); p3 = []; end
+            if ~isempty(p4) && isvalid(p4), delete(p4); p4 = []; end
+            if ~isempty(hL1) && ishandle(hL1), delete(hL1); hL1 = []; end
+            if ~isempty(hL2) && ishandle(hL2), delete(hL2); hL2 = []; end
+            line1Struct = []; line2Struct = [];
+        end
+
+        function redrawLinesCallback(~, ~)
+            if isDrawingLines
+                return; % Previene crash da clic multipli durante il tracciamento
+            end
+            redrawRequested = true;
+            if ishandle(figCalibFull)
+                uiresume(figCalibFull);
+            end
+        end
+
+        function confirmLinesCallback(~, ~)
+            if isDrawingLines
+                return; % Previene crash se l'utente clicca mentre traccia le linee
+            end
+            if isempty(line1Struct) || isempty(line1Struct.scale)
+                msgbox('Please draw calibration line(s) first.', 'Calibration Warning', 'warn');
+                return;
+            end
+            
+            linesConfirmed = true;
+            if ishandle(figCalibFull)
+                uiresume(figCalibFull);
+            end
+        end
+
         function updateVideoFrameCalib(~, ~)
             if isPlayingCalib && hasFrame(vReader) && ishandle(hImgCalib)
                 currFrameCalib = imresize(readFrame(vReader), scaleFactor);
@@ -939,6 +1191,7 @@ function PlumeTracker()
                 if ishandle(sliderVideoCalib), set(sliderVideoCalib, 'Value', 0); end
             end
         end
+
         function toggleVideoCalib(~, ~)
             isPlayingCalib = ~isPlayingCalib;
             if isPlayingCalib
@@ -949,6 +1202,7 @@ function PlumeTracker()
                 stop(timerCalib);
             end
         end
+
         function sliderScrubCalib(~, ~)
             if ishandle(sliderVideoCalib)
                 newTime = get(sliderVideoCalib, 'Value');
@@ -961,6 +1215,7 @@ function PlumeTracker()
             end
         end
     end
+
     function useCameraParams(~, ~)
         fpsUser = str2double(editFPS.String);
         if ~isnan(fpsUser) && fpsUser > 0, fps = fpsUser; end
@@ -978,6 +1233,7 @@ function PlumeTracker()
         calibLinesData = [];
         if ishandle(figCalib), delete(figCalib); end
     end
+
     function val = ternary(cond, trueVal, falseVal)
         if cond, val = trueVal; else, val = falseVal; end
     end
