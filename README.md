@@ -4,6 +4,7 @@ See the 'SYSTEM REQUIREMENTS' and 'STANDALONE DEPLOYMENT via MATLAB Runtime' sec
 
 PlumeTracker is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details <http://www.gnu.org/licenses/>.
 
+========================================================================================
 
 WORKFLOW:
 Processing starts with an interactive GUI where the user configures parameters, selects the primary estimation engine, and calibrates spatial metrics. The system integrates two distinct motion tracking algorithms:
@@ -27,6 +28,7 @@ During execution, PlumeTracker updates a synchronized display featuring (i) the 
 All extracted metrics are automatically saved to a CSV file containing frame indices, physical time (s), mean velocity (m/s), spatial standard deviation (m/s), peak velocity (m/s), directional velocity components (Vx, Vy in m/s), and active plume cross-sectional width (m).
 
 
+========================================================================================
 
 SYSTEM REQUIREMENTS:
 To execute the source code directly within MATLAB, the following official toolboxes must be installed:
@@ -36,8 +38,12 @@ To execute the source code directly within MATLAB, the following official toolbo
 - Image Processing Toolbox (required for morphological cleaning such as bwareaopen, adapthisteq, and spatial image transforms).
 - Parallel Computing Toolbox (optional, required to enable CUDA GPU hardware acceleration for the RAFT engine).
 
+========================================================================================
+
 STANDALONE DEPLOYMENT via MATLAB Runtime:
 For users without an active MATLAB license, the software can be run completely free of charge using the standalone installer ("PlumeTracker_installer"). MATLAB Runtime is a standalone execution engine (a set of shared libraries and royalty-free components provided by MathWorks) that allows compiled MATLAB applications to run on systems without a licensed MATLAB installation. When running the installer, a guided wizard automatically downloads and configures the required MATLAB Runtime environment, bundling all compiled dependencies, toolboxes, and neural network components into a standalone executable (.exe) for direct deployment.
+
+========================================================================================
 
 REFERENCE:
 Please, kindly ensure the source is properly cited:
