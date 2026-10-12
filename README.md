@@ -47,7 +47,7 @@ For users without an active MATLAB license, the software can be run completely f
 
 REFERENCE:
 Please, kindly ensure the source is properly cited:
-Lo Bue Trisciuzzi, G. (2026). PlumeTracker: a MATLAB-based software designed to track and analyze the velocity variations and dynamics of volcanic gases using Farneback or RAFT algorithms. (Version 1.1.1) [Software]. University of Palermo. GitHub repository: https://github.com/giovannilobuetrisciuzzi/PlumeTracker
+Lo Bue Trisciuzzi, G. (2026). PlumeTracker [Software]. GitHub repository: https://github.com/giovannilobuetrisciuzzi/PlumeTracker.
 
 Author: Lo Bue Trisciuzzi Giovanni
 
@@ -55,4 +55,4 @@ Affiliation: University of Palermo
 
 Contacts: giovanni.lobuetrisciuzzi@unipa.it, giovannilobuetrisciuzzi@gmail.com
 
-Update: September 2026
+Update: October 2026
