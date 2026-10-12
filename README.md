@@ -1,4 +1,4 @@
-PlumeTracker is a MATLAB-based software designed to track and analyze the velocity variations and dynamics of volcanic fumaroles, gas plumes, and diffuse emissions from video files. Developed at the University of Palermo by Giovanni Lo Bue Trisciuzzi within the Volcanology Laboratory (LabVulc), the software couples optical flow tracking engines with a multi-stage spatial-temporal filtering pipeline to isolate fluid motion from ambient environmental noise.
+PlumeTracker is a MATLAB-based software designed to track and analyze the velocity variations and dynamics of volcanic fumaroles, gas plumes, and diffuse emissions from video files. Developed at the University of Palermo by Giovanni Lo Bue Trisciuzzi within the volcanology laboratory LabVulc, the software couples optical flow tracking engines with a multi-stage spatial-temporal filtering pipeline to isolate fluid motion from ambient environmental noise.
 
 See the 'SYSTEM REQUIREMENTS' and 'STANDALONE DEPLOYMENT via MATLAB Runtime' sections below, or refer to the external PlumeTracker_Guide file for a practical walkthrough on running the application.
 
